@@ -4,6 +4,10 @@
 /build
 /tmp
 
+# Test coverage
+/coverage
+*.lcov
+
 # Logs
 logs
 *.log
