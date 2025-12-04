@@ -30,9 +30,7 @@ export class TransactionsService {
         return transaction.save();
     }
 
-    async findAll(
-        query: QueryTransactionsDto,
-    ): Promise<PaginatedResponseDto<TransactionDocument>> {
+    async findAll(query: QueryTransactionsDto): Promise<PaginatedResponseDto<TransactionDocument>> {
         const filter: any = {};
 
         if (query.stage) {
