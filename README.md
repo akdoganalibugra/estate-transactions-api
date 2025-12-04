@@ -1,14 +1,14 @@
-# Estate Transaction Backend (Technical Case)
+# Estate Transaction Backend
 
 Bu proje, bir emlak ajansındaki **satış / kiralama işlemlerinin** yaşam döngüsünü ve
 **komisyon dağılımını** yöneten NestJS + MongoDB Atlas tabanlı bir backend uygulamasıdır.
 
 - İşlem aşamaları: `agreement`, `earnest_money`, `title_deed`, `completed`, `canceled` (Case dokümanındaki 4 aşamaya ek olarak, gerçek hayattaki iptal senaryolarını modellemek için `canceled` aşaması eklenmiştir.)
 - Komisyon politikası:
-  - %50 ajansa
-  - %50 ajan(lar)a
-  - Aynı kişi listing + selling ise: %50 → tek ajan
-  - Farklı kişilerse: %25 + %25
+    - %50 ajansa
+    - %50 ajan(lar)a
+    - Aynı kişi listing + selling ise: %50 → tek ajan
+    - Farklı kişilerse: %25 + %25
 - Amaç: Süreci otomatikleştirmek, izlenebilir yapmak ve finansal dağılımı şeffaf hale getirmek.
 
 ## 1. Tech Stack
@@ -44,7 +44,6 @@ src/
     pipes/
     interceptors/
     dto/
-    utils/
 main.ts
 ```
 
@@ -54,7 +53,7 @@ main.ts
 
 - Node.js LTS
 - npm veya yarn
-- MongoDB Atlas hesabı ve connection string
+- MongoDB Atlas hesabı veya paylaşılan connection string
 - (Opsiyonel) Docker
 
 ## 4. Ortam Değişkenleri
@@ -70,3 +69,103 @@ API_PREFIX=/api
 ```
 
 > Not: Case gereği MongoDB Atlas connection string örnek olarak paylaşılmıştır.
+
+## 5. Kurulum
+
+```bash
+npm install
+# veya
+yarn install
+```
+
+## 6. Uygulamayı Çalıştırma
+
+### 6.1. Lokal Geliştirme
+
+```bash
+npm run start:dev
+```
+
+Varsayılan olarak: `http://localhost:3000`
+
+Swagger dokümantasyonu:
+
+- `http://localhost:3000/api-docs`
+
+### 6.2. Testleri Çalıştırma
+
+```bash
+npm run test
+npm run test:watch
+npm run test:cov
+```
+
+Testler özellikle:
+
+- Komisyon hesaplama kuralları
+- Transaction stage geçişleri
+- Temel business logic
+
+üzerine odaklanır.
+
+## 7. Docker ile Çalıştırma (Opsiyonel)
+
+### 7.1. Docker Compose ile (Önerilen)
+
+```bash
+# Container'ı başlat
+docker-compose up -d
+
+# Logları kontrol et
+docker-compose logs -f
+
+# Container'ı durdur
+docker-compose down
+```
+
+### 7.2. Manuel Docker Build
+
+```bash
+# Image build et
+docker build -t estate-transactions-api:latest .
+
+# Container çalıştır
+docker run -p 3000:3000 --env-file .env estate-transactions-api:latest
+```
+
+Container başarıyla çalıştığında:
+
+- API: `http://localhost:3000`
+- Swagger: `http://localhost:3000/api-docs`
+- Health Check: `http://localhost:3000/api/health`
+
+## 8. Deployment
+
+Proje **Railway** platformuna deploy edilmiştir.
+
+### 8.1. Live URLs
+
+- **Live API URL:** `https://estate-transactions-api-production.up.railway.app`
+- **Swagger Docs:** `https://estate-transactions-api-production.up.railway.app/api-docs`
+- **Health Check:** `https://estate-transactions-api-production.up.railway.app/api/health`
+
+### 8.2. Deployment Detayları
+
+- **Platform:** Railway (https://railway.app)
+- **Database:** MongoDB Atlas
+- **Build:** Multi-stage Dockerfile
+- **Environment:** Production
+- **Auto-Deploy:** GitHub main branch push ile otomatik deploy
+
+## 9. Önemli Endpointler (Özet)
+
+- `GET /health` – servis ayakta mı?
+- `POST /transactions` – yeni işlem oluştur
+- `GET /transactions` – filtrelenebilir işlem listesi
+- `GET /transactions/:id` – tek işlem detayı + finansal breakdown
+- `PATCH /transactions/:id/stage` – işlem aşaması güncelle
+- `PATCH /transactions/:id/cancel` – işlemi iptal et
+- `POST /agents` – ajan oluştur (sade model)
+- `GET /agents` – ajan listesini getir
+
+Detaylı açıklamalar için Swagger/OpenAPI dokümantasyonuna bakabilirsiniz.
