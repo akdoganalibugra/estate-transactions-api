@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Agent, AgentDocument } from './schemas/agent.schema';
 import { CreateAgentDto } from './dto/create-agent.dto';
+import { QueryAgentsDto } from './dto/query-agents.dto';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class AgentsService {
@@ -16,8 +18,17 @@ export class AgentsService {
         return agent.save();
     }
 
-    async findAll(): Promise<AgentDocument[]> {
-        return this.agentModel.find().exec();
+    async findAll(query: QueryAgentsDto): Promise<PaginatedResponseDto<AgentDocument>> {
+        const page = query.page || 1;
+        const limit = query.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await Promise.all([
+            this.agentModel.find().skip(skip).limit(limit).exec(),
+            this.agentModel.countDocuments().exec(),
+        ]);
+
+        return new PaginatedResponseDto(data, total, page, limit);
     }
 
     async findOne(id: string): Promise<AgentDocument> {

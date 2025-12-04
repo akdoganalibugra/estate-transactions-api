@@ -8,6 +8,7 @@ import { QueryTransactionsDto } from './dto/query-transactions.dto';
 import { TransactionStage } from './enums/transaction-stage.enum';
 import { ALLOWED_TRANSITIONS } from './constants/stage-transitions.constant';
 import { CommissionService } from './services/commission.service';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class TransactionsService {
@@ -29,7 +30,9 @@ export class TransactionsService {
         return transaction.save();
     }
 
-    async findAll(query: QueryTransactionsDto): Promise<TransactionDocument[]> {
+    async findAll(
+        query: QueryTransactionsDto,
+    ): Promise<PaginatedResponseDto<TransactionDocument>> {
         const filter: any = {};
 
         if (query.stage) {
@@ -51,7 +54,16 @@ export class TransactionsService {
             }
         }
 
-        return this.transactionModel.find(filter).exec();
+        const page = query.page || 1;
+        const limit = query.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const [data, total] = await Promise.all([
+            this.transactionModel.find(filter).skip(skip).limit(limit).exec(),
+            this.transactionModel.countDocuments(filter).exec(),
+        ]);
+
+        return new PaginatedResponseDto(data, total, page, limit);
     }
 
     async findOne(id: string): Promise<TransactionDocument> {
