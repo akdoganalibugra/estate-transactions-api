@@ -3,10 +3,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 import { Transaction, TransactionSchema } from './schemas/transaction.schema';
+import { CommissionService } from './services/commission.service';
 
 @Module({
     imports: [MongooseModule.forFeature([{ name: Transaction.name, schema: TransactionSchema }])],
     controllers: [TransactionsController],
-    providers: [TransactionsService],
+    providers: [TransactionsService, CommissionService],
 })
 export class TransactionsModule {}
