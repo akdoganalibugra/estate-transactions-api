@@ -17,9 +17,9 @@ export class CreateTransactionDto {
     @ApiProperty({
         description:
             'Para birimi (şu an statik olarak kullanılıyor, gelecekte dinamik hale getirilebilir)',
-        example: 'TRY',
+        example: 'GBP',
         enum: ['TRY', 'USD', 'EUR', 'GBP'],
-        default: 'TRY',
+        default: 'GBP',
     })
     @IsString()
     @IsNotEmpty()
