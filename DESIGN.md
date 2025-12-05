@@ -235,8 +235,10 @@ Uygulama, NestJS’in modüler yapısı kullanılarak iki ana domain modülüne 
 
 Ek olarak, ortak bileşenler `common/` altında toplanacaktır (DTO’lar, filtreler, pipe’lar vb.).
 
-Bu ayrım, **transaction** domain’ini ajan yönetiminden bağımsızlaştırırken,
+Bu ayrım, **transaction** domain'ini ajan yönetiminden bağımsızlaştırırken,
 gelecekte daha karmaşık bir kullanıcı / auth sistemi eklenebilmesine zemin hazırlar.
+
+> **Not:** Katmanlı mimari yapısı ve modül ilişkileri için bkz: [Bölüm 0.1 - Proje Mimarisi](#01-proje-mimarisi)
 
 ### 2.2. Single-Agency Varsayımı
 
@@ -297,6 +299,8 @@ Basit tutulmuştur:
 Bu case için ajanın sadece kimlik ve isim bilgilerinin tutulması yeterlidir.
 Kimlik doğrulama, rol yönetimi, ofis/branch bilgisi gibi detaylar scope dışında bırakılmıştır.
 
+> **Not:** Koleksiyonlar arası ilişkiler ve veri yapısı için bkz: [Bölüm 0.3 - Entity Relationship Diagram](#03-entity-relationship-diagram)
+
 ---
 
 ## 4. İş Mantığı Tasarımı
@@ -356,7 +360,9 @@ Bu mantık:
 Bu izolasyon, hem test edilebilirlik hem de gelecekte kuralların karmaşıklaşması durumunda
 kolay genişletilebilirlik sağlar.
 
-### 4.3. Commission Policy’nin Sabit Olması
+> **Not:** Komisyon hesaplama süreci ve servisler arası etkileşim için bkz: [Bölüm 0.4 - Komisyon Hesaplama Akışı](#04-komisyon-hesaplama-akışı)
+
+### 4.3. Commission Policy'nin Sabit Olması
 
 Bu case kapsamında komisyon oranları **kod içinde sabit (hard-coded)** olarak tanımlanacaktır:
 
