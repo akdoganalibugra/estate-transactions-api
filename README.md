@@ -164,6 +164,7 @@ Proje **Railway** platformuna deploy edilmiştir.
 - `GET /transactions` – filtrelenebilir işlem listesi
 - `GET /transactions/:id` – tek işlem detayı + finansal breakdown
 - `PATCH /transactions/:id/stage` – işlem aşaması güncelle
+- `PATCH /transactions/:id/fast-complete` – işlemi doğrudan tamamla (aradaki aşamaları atla)
 - `PATCH /transactions/:id/cancel` – işlemi iptal et
 - `POST /agents` – ajan oluştur (sade model)
 - `GET /agents` – ajan listesini getir
