@@ -1,3 +1,211 @@
+## 0. Proje Diyagramları
+
+### 0.1. Proje Mimarisi
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        CLIENT[HTTP Client / Swagger UI]
+    end
+
+    subgraph "API Layer - NestJS"
+        MAIN[main.ts<br/>Port: 3000]
+        APP[AppModule]
+
+        subgraph "Core Modules"
+            HEALTH[HealthModule<br/>GET /health]
+            TRANS_MOD[TransactionsModule]
+            AGENT_MOD[AgentsModule]
+        end
+
+        subgraph "Common Layer"
+            FILTERS[HttpExceptionFilter]
+            INTERCEPTORS[LoggingInterceptor]
+            PIPES[ValidationPipe]
+            DTOS[DTOs<br/>Pagination, Responses]
+        end
+    end
+
+    subgraph "Business Layer"
+        TRANS_CTRL[TransactionsController<br/>POST/GET/PATCH]
+        TRANS_SVC[TransactionsService<br/>CRUD + State Machine]
+        COMM_SVC[CommissionService<br/>Calculation Logic]
+
+        AGENT_CTRL[AgentsController<br/>POST/GET]
+        AGENT_SVC[AgentsService<br/>CRUD]
+    end
+
+    subgraph "Data Layer"
+        TRANS_SCHEMA[Transaction Schema<br/>stage, fees, agents]
+        AGENT_SCHEMA[Agent Schema<br/>firstName, lastName]
+        FIN_SCHEMA[FinancialBreakdown<br/>embedded]
+        HIST_SCHEMA[StageHistory<br/>embedded array]
+    end
+
+    subgraph "Database"
+        MONGODB[(MongoDB Atlas)]
+    end
+
+    CLIENT -->|HTTP| MAIN
+    MAIN --> APP
+    APP --> HEALTH
+    APP --> TRANS_MOD
+    APP --> AGENT_MOD
+    APP --> FILTERS
+    APP --> INTERCEPTORS
+    APP --> PIPES
+
+    TRANS_MOD --> TRANS_CTRL
+    TRANS_CTRL --> TRANS_SVC
+    TRANS_SVC --> COMM_SVC
+    TRANS_SVC --> TRANS_SCHEMA
+
+    AGENT_MOD --> AGENT_CTRL
+    AGENT_CTRL --> AGENT_SVC
+    AGENT_SVC --> AGENT_SCHEMA
+
+    TRANS_SCHEMA --> FIN_SCHEMA
+    TRANS_SCHEMA --> HIST_SCHEMA
+    TRANS_SCHEMA --> MONGODB
+    AGENT_SCHEMA --> MONGODB
+
+    %% ---- STYLES ----
+    classDef clientLayer fill:#FFF3E0,stroke:#FB8C00,stroke-width:1px,color:#E65100;
+    classDef apiLayer fill:#E3F2FD,stroke:#1E88E5,stroke-width:1px,color:#0D47A1;
+    classDef commonLayer fill:#EDE7F6,stroke:#5E35B1,stroke-width:1px,color:#311B92;
+    classDef businessLayer fill:#E8F5E9,stroke:#43A047,stroke-width:1px,color:#1B5E20;
+    classDef dataLayer fill:#F3E5F5,stroke:#8E24AA,stroke-width:1px,color:#4A148C;
+    classDef dbLayer fill:#FFEBEE,stroke:#E53935,stroke-width:1px,color:#B71C1C;
+
+    class CLIENT clientLayer;
+    class MAIN,APP,HEALTH,TRANS_MOD,AGENT_MOD apiLayer;
+    class FILTERS,INTERCEPTORS,PIPES,DTOS commonLayer;
+    class TRANS_CTRL,TRANS_SVC,COMM_SVC,AGENT_CTRL,AGENT_SVC businessLayer;
+    class TRANS_SCHEMA,AGENT_SCHEMA,FIN_SCHEMA,HIST_SCHEMA dataLayer;
+    class MONGODB dbLayer;
+```
+
+### 0.2. Transaction Stage Akışı & Fast Complete
+
+```mermaid
+stateDiagram-v2
+    [*] --> agreement
+
+    agreement --> earnest_money: Progress
+    earnest_money --> title_deed: Progress
+    title_deed --> completed: Finalize
+    completed --> [*]
+
+    agreement --> canceled: Cancel
+    canceled --> [*]
+
+    agreement --> completed: Fast-complete
+
+    note right of agreement
+        - Fast-complete akışı
+          agreement veya earnest_money
+          aşamasından başlatılabilir
+        - Cancel, completed olana kadar mümkündür
+
+    end note
+
+    note right of completed
+        Commission Hesaplaması:
+        - 50% Agency
+        - 50% Agent(s)
+    end note
+```
+
+### 0.3. Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    TRANSACTION ||--o{ STAGE_HISTORY : contains
+    TRANSACTION ||--|| FINANCIAL_BREAKDOWN : has
+    TRANSACTION }o--|| AGENT : "listing agent"
+    TRANSACTION }o--|| AGENT : "selling agent"
+    FINANCIAL_BREAKDOWN ||--o{ AGENT_SHARE : contains
+
+    TRANSACTION {
+        ObjectId _id PK
+        string stage
+        number totalServiceFee
+        string currency
+        ObjectId listingAgentId FK
+        ObjectId sellingAgentId FK
+        date createdAt
+        date updatedAt
+    }
+
+    AGENT {
+        ObjectId _id PK
+        string firstName
+        string lastName
+        date createdAt
+        date updatedAt
+    }
+
+    FINANCIAL_BREAKDOWN {
+        number agencyAmount
+        array agentShares
+    }
+
+    AGENT_SHARE {
+        ObjectId agentId
+        string role
+        number amount
+    }
+
+    STAGE_HISTORY {
+        string fromStage
+        string toStage
+        date changedAt
+    }
+```
+
+### 0.4. Komisyon Hesaplama Akışı
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant TC as TransactionsController
+    participant TS as TransactionsService
+    participant CS as CommissionService
+    participant DB as MongoDB
+
+    C->>TC: PATCH /transactions/:id/stage<br/>{toStage: "completed"}
+    TC->>TS: updateStage(id, toStage)
+    TS->>DB: Find transaction
+    DB-->>TS: Transaction data
+
+    TS->>TS: validateStageTransition()
+    alt Valid transition
+        TS->>TS: Update stage to "completed"
+        TS->>CS: calculate(totalServiceFee, listingAgentId, sellingAgentId)
+
+        CS->>CS: agencyAmount = fee * 0.5
+
+        alt Same agent (listing == selling)
+            CS->>CS: agentShare = fee * 0.5 (one agent)
+        else Different agents
+            CS->>CS: listingShare = fee * 0.25
+            CS->>CS: sellingShare = fee * 0.25
+        end
+
+        CS-->>TS: FinancialBreakdown{agencyAmount, agentShares[]}
+
+        TS->>DB: Update transaction<br/>(stage, financialBreakdown, stageHistory)
+        DB-->>TS: Updated transaction
+        TS-->>TC: Transaction with breakdown
+        TC-->>C: 200 OK + Transaction
+    else Invalid transition
+        TS-->>TC: BadRequestException
+        TC-->>C: 400 Bad Request
+    end
+```
+
+---
+
 ## 1. Problem Analizi ve Hedef
 
 Bu tasarımın amacı, bir emlak ajansındaki satış / kiralama işlemlerinin:
