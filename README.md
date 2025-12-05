@@ -49,6 +49,17 @@ main.ts
 
 > Not: Modül isimleri / klasör yapısı proje ilerledikçe küçük değişiklikler gösterebilir.
 
+### 2.1. Mimari ve Veri Akış Diyagramları
+
+Proje mimarisi, transaction state machine, entity ilişkileri, API endpoint'leri ve komisyon hesaplama akışlarını gösteren detaylı **Mermaid diyagramları** için [DESIGN.md](./DESIGN.md) dosyasının başındaki **"Proje Diyagramları"** bölümüne bakabilirsiniz.
+
+Diyagramlar şunları içerir:
+
+- **Proje Mimarisi**: NestJS katmanları, modüller, servisler
+- **Transaction State Machine**: İşlem aşamaları ve geçişler
+- **Entity Relationship Diagram**: MongoDB koleksiyonları ve ilişkileri
+- **Komisyon Hesaplama Akışı**: Sequence diagram
+
 ## 3. Başlangıç Gereksinimleri
 
 - Node.js LTS
