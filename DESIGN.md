@@ -307,35 +307,28 @@ Transaction stage yönetimi için hafif bir **state machine** yaklaşımı benim
 
 İzin verilen ana akış:
 
-```mermaid
-stateDiagram-v2
-  [*] --> agreement
-  agreement --> earnest_money
-  earnest_money --> title_deed
-  title_deed --> completed
-
-  agreement --> canceled
-  earnest_money --> canceled
-  title_deed --> canceled
-
-  completed --> [*]
-  canceled --> [*]
-```
-
-- Normal akış: `agreement → earnest_money → title_deed → completed`
+- **Normal akış:** `agreement → earnest_money → title_deed → completed`
+- **Fast-complete akışı:** `agreement → completed` veya `earnest_money → completed`
+    - Acil kapanış durumları için (örn: nakit alıcı, hızlı satış)
+    - Aradaki tüm aşamalar otomatik olarak history'ye eklenir
+    - Komisyon tek aksiyonla hesaplanır
 - Her aşamada **iptal (canceled)** mümkün:
     - Gerçek hayatta işlemler çoğu zaman farklı nedenlerle iptal olabilir.
 - `completed` veya `canceled` son durumlar (terminal states) olarak ele alınır.
 
 Invalid geçişler için:
 
-- Örnek: `completed → earnest_money`
+- Örnek: `completed → earnest_money` (geri sarma)
+- Örnek: `canceled → completed` (terminal state'den geçiş)
 - Bu tip geçişler servis katmanında engellenir ve anlamlı bir hata döndürülür.
 
 Bu sayede:
 
 - İşlem yaşam döngüsü **izlenebilir** ve tutarlı olur.
-- Yanlışlıkla “geri sarma” gibi anormal durumlar kontrol altında tutulur.
+- Yanlışlıkla "geri sarma" gibi anormal durumlar kontrol altında tutulur.
+- Fast-complete ile gerçek hayat senaryolarına esneklik sağlanır.
+
+> **Not:** Detaylı state machine diyagramı için bkz: [Bölüm 0.2 - Transaction Stage Akışı](#02-transaction-stage-akışı--fast-complete)
 
 ### 4.2. Komisyon Hesaplama Kuralları
 

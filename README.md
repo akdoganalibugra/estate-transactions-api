@@ -51,7 +51,7 @@ main.ts
 
 ### 2.1. Mimari ve Veri Akış Diyagramları
 
-Proje mimarisi, transaction state machine, entity ilişkileri, API endpoint'leri ve komisyon hesaplama akışlarını gösteren detaylı **Mermaid diyagramları** için [DESIGN.md](./DESIGN.md) dosyasının başındaki **"Proje Diyagramları"** bölümüne bakabilirsiniz.
+Proje mimarisi, transaction state machine, entity ilişkileri, API endpoint'leri ve komisyon hesaplama akışlarını gösteren detaylı diyagramlar için [DESIGN.md](./DESIGN.md) dosyasının başındaki **"Proje Diyagramları"** bölümüne bakabilirsiniz.
 
 Diyagramlar şunları içerir:
 
