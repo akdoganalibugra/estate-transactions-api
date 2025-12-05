@@ -92,6 +92,25 @@ Swagger dokümantasyonu:
 
 - `http://localhost:3000/api-docs`
 
+#### Swagger API Dokümantasyonu
+
+Proje, @nestjs/swagger ile kapsamlı API dokümantasyonuna sahiptir:
+
+- **Detaylı Alan Açıklamaları:** Her DTO alanı için Türkçe açıklamalar
+- **Örnek Değerler:** Gerçekçi örnek request/response body'leri
+- **Enum Dokümantasyonu:** Transaction stage'leri ve geçişleri için detaylı açıklamalar
+- **Filtre Parametreleri:** Query parametreleri için açıklamalar ve örnekler
+- **Pagination:** Sayfalama parametreleri ve default değerleri
+- **Validation Kuralları:** Min/max değerler, zorunlu alanlar otomatik görünür
+
+Özellikler:
+
+- `totalServiceFee`: Komisyon dahil toplam bedel (örn: 50000)
+- `currency`: Para birimi (şu an statik)
+- `stage`: Transaction aşamaları (agreement → earnest_money → title_deed → completed)
+- `agentId`: MongoDB ObjectId formatında ajan referansları
+- `fromDate/toDate`: ISO 8601 formatında tarih filtreleri
+
 ### 6.2. Testleri Çalıştırma
 
 ```bash
