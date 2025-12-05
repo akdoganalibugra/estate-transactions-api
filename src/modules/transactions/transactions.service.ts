@@ -130,6 +130,64 @@ export class TransactionsService {
         return this.updateStage(id, { toStage: TransactionStage.CANCELED });
     }
 
+    async fastComplete(id: string): Promise<TransactionDocument> {
+        const transaction = await this.findOne(id);
+
+        // Terminal state kontrolü
+        if (transaction.stage === TransactionStage.COMPLETED) {
+            throw new BadRequestException('Transaction is already completed');
+        }
+
+        if (transaction.stage === TransactionStage.CANCELED) {
+            throw new BadRequestException('Cannot complete a canceled transaction');
+        }
+
+        // Aradaki tüm stage'leri history'ye ekle
+        const stageProgression = this.getStageProgression(transaction.stage as TransactionStage);
+        const previousStage = transaction.stage;
+
+        stageProgression.forEach(stage => {
+            transaction.stageHistory.push({
+                fromStage: previousStage,
+                toStage: stage,
+                changedAt: new Date(),
+            });
+        });
+
+        transaction.stage = TransactionStage.COMPLETED;
+
+        transaction.financialBreakdown = this.commissionService.calculate({
+            totalServiceFee: transaction.totalServiceFee,
+            listingAgentId: transaction.listingAgentId,
+            sellingAgentId: transaction.sellingAgentId,
+        });
+
+        return transaction.save();
+    }
+
+    private getStageProgression(currentStage: TransactionStage): TransactionStage[] {
+        const progression: TransactionStage[] = [];
+
+        switch (currentStage) {
+            case TransactionStage.AGREEMENT:
+                progression.push(TransactionStage.EARNEST_MONEY);
+                progression.push(TransactionStage.TITLE_DEED);
+                progression.push(TransactionStage.COMPLETED);
+                break;
+            case TransactionStage.EARNEST_MONEY:
+                progression.push(TransactionStage.TITLE_DEED);
+                progression.push(TransactionStage.COMPLETED);
+                break;
+            case TransactionStage.TITLE_DEED:
+                progression.push(TransactionStage.COMPLETED);
+                break;
+            default:
+                progression.push(TransactionStage.COMPLETED);
+        }
+
+        return progression;
+    }
+
     private validateStageTransition(
         currentStage: TransactionStage,
         targetStage: TransactionStage,

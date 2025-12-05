@@ -216,4 +216,92 @@ describe('TransactionsService', () => {
             expect(result.totalPages).toBe(3);
         });
     });
+
+    describe('fastComplete', () => {
+        it('should fast-complete transaction from agreement stage', async () => {
+            const transactionId = new Types.ObjectId().toString();
+            const mockTx = {
+                _id: transactionId,
+                stage: TransactionStage.AGREEMENT,
+                totalServiceFee: 10000,
+                listingAgentId: new Types.ObjectId(),
+                sellingAgentId: new Types.ObjectId(),
+                stageHistory: [],
+                save: jest.fn().mockResolvedValue(this),
+            };
+
+            mockTransactionModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockTx),
+            });
+
+            await service.fastComplete(transactionId);
+
+            expect(mockTx.stage).toBe(TransactionStage.COMPLETED);
+            expect(mockTx.stageHistory.length).toBeGreaterThan(0);
+            expect(commissionService.calculate).toHaveBeenCalled();
+            expect(mockTx.save).toHaveBeenCalled();
+        });
+
+        it('should fast-complete transaction from earnest_money stage', async () => {
+            const transactionId = new Types.ObjectId().toString();
+            const mockTx = {
+                _id: transactionId,
+                stage: TransactionStage.EARNEST_MONEY,
+                totalServiceFee: 10000,
+                listingAgentId: new Types.ObjectId(),
+                sellingAgentId: new Types.ObjectId(),
+                stageHistory: [],
+                save: jest.fn().mockResolvedValue(this),
+            };
+
+            mockTransactionModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockTx),
+            });
+
+            await service.fastComplete(transactionId);
+
+            expect(mockTx.stage).toBe(TransactionStage.COMPLETED);
+            expect(mockTx.save).toHaveBeenCalled();
+        });
+
+        it('should throw error when trying to fast-complete already completed transaction', async () => {
+            const transactionId = new Types.ObjectId().toString();
+            const mockTx = {
+                _id: transactionId,
+                stage: TransactionStage.COMPLETED,
+                totalServiceFee: 10000,
+                listingAgentId: new Types.ObjectId(),
+                sellingAgentId: new Types.ObjectId(),
+                stageHistory: [],
+            };
+
+            mockTransactionModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockTx),
+            });
+
+            await expect(service.fastComplete(transactionId)).rejects.toThrow(
+                'Transaction is already completed',
+            );
+        });
+
+        it('should throw error when trying to fast-complete canceled transaction', async () => {
+            const transactionId = new Types.ObjectId().toString();
+            const mockTx = {
+                _id: transactionId,
+                stage: TransactionStage.CANCELED,
+                totalServiceFee: 10000,
+                listingAgentId: new Types.ObjectId(),
+                sellingAgentId: new Types.ObjectId(),
+                stageHistory: [],
+            };
+
+            mockTransactionModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockTx),
+            });
+
+            await expect(service.fastComplete(transactionId)).rejects.toThrow(
+                'Cannot complete a canceled transaction',
+            );
+        });
+    });
 });

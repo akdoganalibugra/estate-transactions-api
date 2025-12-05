@@ -68,4 +68,15 @@ export class TransactionsController {
     async cancel(@Param('id') id: string): Promise<Transaction> {
         return this.transactionsService.cancel(id);
     }
+
+    @Patch(':id/fast-complete')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Fast-complete a transaction (skip intermediate stages)' })
+    @ApiParam({ name: 'id', description: 'Transaction ID' })
+    @ApiResponse({ status: 200, description: 'Transaction fast-completed successfully' })
+    @ApiResponse({ status: 400, description: 'Cannot fast-complete transaction' })
+    @ApiResponse({ status: 404, description: 'Transaction not found' })
+    async fastComplete(@Param('id') id: string): Promise<Transaction> {
+        return this.transactionsService.fastComplete(id);
+    }
 }
